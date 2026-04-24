@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { MdAdd, MdEdit, MdDelete, MdPhone, MdEmail, MdHistory, MdWarning } from "react-icons/md";
+import { MdAdd, MdEdit, MdDelete, MdPhone, MdEmail, MdHistory, MdWarning, MdFileDownload } from "react-icons/md";
 import { FaWhatsapp } from "react-icons/fa";
 import LeadModal from "@/components/LeadModal";
 import ActivityTimelineModal from "@/components/ActivityTimelineModal";
@@ -138,6 +138,43 @@ export default function LeadsPage() {
     return true;
   });
 
+  const exportToCSV = () => {
+    if (filteredLeads.length === 0) {
+      toast.error("No leads to export");
+      return;
+    }
+
+    const headers = ["Name", "Email", "Phone", "Property Interest", "Budget (PKR)", "Status", "Priority", "Assigned To", "Created At"];
+    
+    const csvContent = [
+      headers.join(","),
+      ...filteredLeads.map(lead => {
+        return [
+          `"${lead.name.replace(/"/g, '""')}"`,
+          `"${lead.email}"`,
+          `"${lead.phone}"`,
+          `"${lead.propertyInterest.replace(/"/g, '""')}"`,
+          lead.budget,
+          `"${lead.status}"`,
+          `"${lead.score}"`,
+          `"${lead.assignedTo ? lead.assignedTo.name : 'Unassigned'}"`,
+          `"${new Date(lead.createdAt).toLocaleDateString()}"`
+        ].join(",");
+      })
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("Exported to CSV successfully");
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -145,13 +182,22 @@ export default function LeadsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Lead Management</h1>
           <p className="text-slate-600 text-sm">Manage your properties and potential clients</p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
-        >
-          <MdAdd className="h-5 w-5" />
-          Add New Lead
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={exportToCSV}
+            className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+          >
+            <MdFileDownload className="h-5 w-5" />
+            Export CSV
+          </button>
+          <button
+            onClick={handleCreate}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+          >
+            <MdAdd className="h-5 w-5" />
+            Add New Lead
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row gap-4 items-center">

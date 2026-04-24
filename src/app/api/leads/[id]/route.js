@@ -38,7 +38,8 @@ export async function GET(req, { params }) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const lead = await getLeadAndCheckAuth(params.id, session);
+    const { id } = await params;
+    const lead = await getLeadAndCheckAuth(id, session);
     
     if (lead === null) return NextResponse.json({ message: "Lead not found" }, { status: 404 });
     if (lead === false) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
@@ -54,7 +55,8 @@ export async function PUT(req, { params }) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const lead = await getLeadAndCheckAuth(params.id, session);
+    const { id } = await params;
+    const lead = await getLeadAndCheckAuth(id, session);
     
     if (lead === null) return NextResponse.json({ message: "Lead not found" }, { status: 404 });
     if (lead === false) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
@@ -85,7 +87,7 @@ export async function PUT(req, { params }) {
     validatedData.lastActivityAt = new Date();
 
     const updatedLead = await Lead.findByIdAndUpdate(
-      params.id,
+      id,
       { $set: validatedData },
       { new: true, runValidators: true }
     );
@@ -138,12 +140,13 @@ export async function DELETE(req, { params }) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const lead = await getLeadAndCheckAuth(params.id, session);
+    const { id } = await params;
+    const lead = await getLeadAndCheckAuth(id, session);
     
     if (lead === null) return NextResponse.json({ message: "Lead not found" }, { status: 404 });
     if (lead === false) return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 
-    await Lead.findByIdAndDelete(params.id);
+    await Lead.findByIdAndDelete(id);
 
     return NextResponse.json({ message: "Lead deleted successfully" }, { status: 200 });
   } catch (error) {

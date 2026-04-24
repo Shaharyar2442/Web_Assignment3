@@ -12,14 +12,16 @@ export async function GET(req, { params }) {
 
     await connectToDatabase();
     
+    const { id } = await params;
+    
     // Check auth
-    const lead = await Lead.findById(params.id);
+    const lead = await Lead.findById(id);
     if (!lead) return NextResponse.json({ message: "Lead not found" }, { status: 404 });
     if (session.user.role === "Agent" && String(lead.assignedTo) !== session.user.id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const activities = await ActivityLog.find({ leadId: params.id })
+    const activities = await ActivityLog.find({ leadId: id })
       .populate("performedBy", "name role")
       .sort({ createdAt: -1 });
 

@@ -17,6 +17,11 @@ export default function LeadsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState("All Time");
+  
   // Timeline state
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [timelineLead, setTimelineLead] = useState(null);
@@ -112,6 +117,27 @@ export default function LeadsPage() {
     return fDate < today;
   };
 
+  const filteredLeads = leads.filter(lead => {
+    // Status Filter
+    if (statusFilter !== "All" && lead.status !== statusFilter) return false;
+    
+    // Priority Filter
+    if (priorityFilter !== "All" && lead.score !== priorityFilter) return false;
+    
+    // Date Filter
+    if (dateFilter !== "All Time") {
+      const leadDate = new Date(lead.createdAt);
+      const today = new Date();
+      const diffTime = Math.abs(today - leadDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (dateFilter === "Last 7 Days" && diffDays > 7) return false;
+      if (dateFilter === "Last 30 Days" && diffDays > 30) return false;
+    }
+    
+    return true;
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -126,6 +152,51 @@ export default function LeadsPage() {
           <MdAdd className="h-5 w-5" />
           Add New Lead
         </button>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row gap-4 items-center">
+        <div className="flex flex-col w-full sm:w-1/3">
+          <label className="text-xs font-semibold text-slate-500 uppercase mb-1">Status Filter</label>
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full border border-slate-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          >
+            <option value="All">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Contacted">Contacted</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+        
+        <div className="flex flex-col w-full sm:w-1/3">
+          <label className="text-xs font-semibold text-slate-500 uppercase mb-1">Priority Filter</label>
+          <select 
+            value={priorityFilter} 
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="w-full border border-slate-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          >
+            <option value="All">All Priorities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+            <option value="Unassigned">Unassigned</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col w-full sm:w-1/3">
+          <label className="text-xs font-semibold text-slate-500 uppercase mb-1">Date Created</label>
+          <select 
+            value={dateFilter} 
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-full border border-slate-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          >
+            <option value="All Time">All Time</option>
+            <option value="Last 7 Days">Last 7 Days</option>
+            <option value="Last 30 Days">Last 30 Days</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -160,14 +231,14 @@ export default function LeadsPage() {
                     </div>
                   </td>
                 </tr>
-              ) : leads.length === 0 ? (
+              ) : filteredLeads.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-10 text-center text-slate-500">
-                    No leads found. Click "Add New Lead" to get started.
+                    No leads found matching the filters.
                   </td>
                 </tr>
               ) : (
-                leads.map((lead) => (
+                filteredLeads.map((lead) => (
                   <tr key={lead._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">

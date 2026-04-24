@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { MdClose } from "react-icons/md";
 import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
 export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = null }) {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "Admin";
   const isEditing = !!existingLead;
+  const [agents, setAgents] = useState([]);
   
   const {
     register,
@@ -14,7 +18,10 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
     reset,
     formState: { errors, isSubmitting },
   } = useForm({
-    defaultValues: existingLead || {
+    defaultValues: existingLead ? {
+      ...existingLead,
+      assignedTo: existingLead.assignedTo?._id || existingLead.assignedTo || "",
+    } : {
       name: "",
       email: "",
       phone: "",
@@ -22,12 +29,34 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
       budget: "",
       status: "New",
       notes: "",
+      assignedTo: "",
     },
   });
 
   useEffect(() => {
+    if (isAdmin && isOpen) {
+      // Fetch agents for assignment dropdown
+      const fetchAgents = async () => {
+        try {
+          const res = await fetch("/api/users/agents");
+          if (res.ok) {
+            const data = await res.json();
+            setAgents(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch agents:", error);
+        }
+      };
+      fetchAgents();
+    }
+  }, [isAdmin, isOpen]);
+
+  useEffect(() => {
     if (existingLead) {
-      reset(existingLead);
+      reset({
+        ...existingLead,
+        assignedTo: existingLead.assignedTo?._id || existingLead.assignedTo || "",
+      });
     } else {
       reset({
         name: "",
@@ -37,6 +66,7 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
         budget: "",
         status: "New",
         notes: "",
+        assignedTo: "",
       });
     }
   }, [existingLead, reset, isOpen]);
@@ -46,6 +76,11 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
   const onSubmit = async (data) => {
     // Parse budget as number
     data.budget = Number(data.budget);
+    
+    // Handle empty assignedTo (convert to null or delete from payload)
+    if (data.assignedTo === "") {
+      data.assignedTo = null;
+    }
     
     const toastId = toast.loading(isEditing ? "Updating lead..." : "Creating lead...");
     
@@ -158,17 +193,34 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Status</label>
-                <select
-                  className="mt-1 block w-full bg-white border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  {...register("status")}
-                >
-                  <option value="New">New</option>
-                  <option value="Contacted">Contacted</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Closed">Closed</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Status</label>
+                  <select
+                    className="mt-1 block w-full bg-white border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    {...register("status")}
+                  >
+                    <option value="New">New</option>
+                    <option value="Contacted">Contacted</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+                
+                {isAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Assign To Agent</label>
+                    <select
+                      className="mt-1 block w-full bg-white border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      {...register("assignedTo")}
+                    >
+                      <option value="">Unassigned</option>
+                      {agents.map(agent => (
+                        <option key={agent._id} value={agent._id}>{agent.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>

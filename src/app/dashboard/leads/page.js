@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { MdAdd, MdEdit, MdDelete, MdPhone, MdEmail, MdHistory, MdWarning } from "react-icons/md";
+import { FaWhatsapp } from "react-icons/fa";
 import LeadModal from "@/components/LeadModal";
 import ActivityTimelineModal from "@/components/ActivityTimelineModal";
 
@@ -37,6 +38,13 @@ export default function LeadsPage() {
 
   useEffect(() => {
     fetchLeads();
+    
+    // Real-time updates fallback: Polling every 10 seconds
+    const interval = setInterval(() => {
+      fetchLeads();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleCreate = () => {
@@ -211,6 +219,15 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-3">
+                        <a
+                          href={`https://wa.me/${lead.phone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-600 hover:text-green-900 p-1 bg-green-50 hover:bg-green-100 rounded transition-colors"
+                          title="Chat on WhatsApp"
+                        >
+                          <FaWhatsapp className="h-5 w-5" />
+                        </a>
                         <button 
                           onClick={() => handleTimeline(lead)}
                           className="text-indigo-600 hover:text-indigo-900 p-1 bg-indigo-50 hover:bg-indigo-100 rounded transition-colors"

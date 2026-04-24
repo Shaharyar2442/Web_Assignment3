@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Lead from "@/models/Lead";
+import User from "@/models/User";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { z } from "zod";
+import { sendNewLeadEmail } from "@/lib/email";
 
 // Validation Schema
 const leadSchema = z.object({
@@ -91,6 +93,16 @@ export async function POST(req) {
       performedBy: session.user.id,
       details: `Lead created with ${score} priority.`,
     });
+
+    // Phase 5: Send Email Notification to Admin
+    try {
+      const admin = await User.findOne({ role: "Admin" });
+      if (admin && admin.email) {
+        await sendNewLeadEmail(admin.email, newLead);
+      }
+    } catch (e) {
+      console.error("Failed to send new lead email", e);
+    }
 
     return NextResponse.json(newLead, { status: 201 });
   } catch (error) {

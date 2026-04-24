@@ -14,6 +14,7 @@ const updateLeadSchema = z.object({
   status: z.enum(["New", "Contacted", "In Progress", "Closed"]).optional(),
   notes: z.string().optional(),
   assignedTo: z.string().nullable().optional(), // Can be reassigned
+  followUpDate: z.string().nullable().optional(),
 });
 
 async function getLeadAndCheckAuth(id, session) {
@@ -69,7 +70,7 @@ export async function PUT(req, { params }) {
     const validatedData = validationResult.data;
 
     // Recalculate score if budget changed
-    if (validatedData.budget && validatedData.budget !== lead.budget) {
+    if (validatedData.budget !== undefined && validatedData.budget !== lead.budget) {
       if (validatedData.budget > 20000000) {
         validatedData.score = "High";
       } else if (validatedData.budget >= 10000000) {
@@ -79,11 +80,37 @@ export async function PUT(req, { params }) {
       }
     }
 
+    validatedData.lastActivityAt = new Date();
+
     const updatedLead = await Lead.findByIdAndUpdate(
       params.id,
       { $set: validatedData },
       { new: true, runValidators: true }
     );
+
+    // Phase 4: Activity Log for Updates
+    const ActivityLog = (await import("@/models/ActivityLog")).default;
+    
+    let actionDetails = [];
+    if (validatedData.status && validatedData.status !== lead.status) {
+      actionDetails.push(`Status changed to ${validatedData.status}`);
+    }
+    if (validatedData.assignedTo !== undefined && String(validatedData.assignedTo) !== String(lead.assignedTo)) {
+      actionDetails.push(`Lead reassigned`);
+    }
+    if (validatedData.followUpDate !== undefined && String(validatedData.followUpDate) !== String(lead.followUpDate)) {
+      actionDetails.push(validatedData.followUpDate ? `Follow-up set to ${new Date(validatedData.followUpDate).toLocaleDateString()}` : "Follow-up removed");
+    }
+    if (actionDetails.length === 0) {
+      actionDetails.push("Lead details updated");
+    }
+
+    await ActivityLog.create({
+      leadId: updatedLead._id,
+      action: "Lead Updated",
+      performedBy: session.user.id,
+      details: actionDetails.join(", "),
+    });
 
     return NextResponse.json(updatedLead, { status: 200 });
   } catch (error) {

@@ -14,6 +14,7 @@ const leadSchema = z.object({
   budget: z.number().min(0, "Budget cannot be negative"),
   status: z.enum(["New", "Contacted", "In Progress", "Closed"]).optional(),
   notes: z.string().optional(),
+  followUpDate: z.string().nullable().optional(),
 });
 
 export async function GET(req) {
@@ -79,7 +80,16 @@ export async function POST(req) {
     const newLead = await Lead.create({
       ...validatedData,
       score,
-      // For now, new leads are unassigned unless admin assigns them later
+      lastActivityAt: new Date(),
+    });
+
+    // Phase 4: Activity Log
+    const ActivityLog = (await import("@/models/ActivityLog")).default;
+    await ActivityLog.create({
+      leadId: newLead._id,
+      action: "Lead Created",
+      performedBy: session.user.id,
+      details: `Lead created with ${score} priority.`,
     });
 
     return NextResponse.json(newLead, { status: 201 });

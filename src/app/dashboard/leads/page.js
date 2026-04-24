@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { MdAdd, MdEdit, MdDelete, MdPhone, MdEmail } from "react-icons/md";
+import { MdAdd, MdEdit, MdDelete, MdPhone, MdEmail, MdHistory, MdWarning } from "react-icons/md";
 import LeadModal from "@/components/LeadModal";
+import ActivityTimelineModal from "@/components/ActivityTimelineModal";
 
 export default function LeadsPage() {
   const { data: session } = useSession();
@@ -14,6 +15,10 @@ export default function LeadsPage() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  
+  // Timeline state
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [timelineLead, setTimelineLead] = useState(null);
 
   const fetchLeads = async () => {
     setIsLoading(true);
@@ -42,6 +47,11 @@ export default function LeadsPage() {
   const handleEdit = (lead) => {
     setSelectedLead(lead);
     setIsModalOpen(true);
+  };
+
+  const handleTimeline = (lead) => {
+    setTimelineLead(lead);
+    setIsTimelineOpen(true);
   };
 
   const handleDelete = async (id) => {
@@ -76,6 +86,22 @@ export default function LeadsPage() {
       case "Closed": return "bg-green-100 text-green-800";
       default: return "bg-slate-100 text-slate-800";
     }
+  };
+
+  const isStale = (lastActivityAt) => {
+    if (!lastActivityAt) return false;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    return new Date(lastActivityAt) < sevenDaysAgo;
+  };
+
+  const isFollowUpOverdue = (followUpDate) => {
+    if (!followUpDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const fDate = new Date(followUpDate);
+    fDate.setHours(0, 0, 0, 0);
+    return fDate < today;
   };
 
   return (
@@ -162,6 +188,13 @@ export default function LeadsPage() {
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getScoreColor(lead.score)} ${lead.score === 'High' ? 'animate-pulse ring-2 ring-red-400 ring-offset-1' : ''}`}>
                           Priority: {lead.score}
                         </span>
+                        
+                        {(isStale(lead.lastActivityAt) || isFollowUpOverdue(lead.followUpDate)) && lead.status !== 'Closed' && (
+                          <span className="flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                            <MdWarning className="h-3 w-3" />
+                            {isFollowUpOverdue(lead.followUpDate) ? "Follow-up Overdue!" : "Stale (No Activity)"}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -178,6 +211,13 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-3">
+                        <button 
+                          onClick={() => handleTimeline(lead)}
+                          className="text-indigo-600 hover:text-indigo-900 p-1 bg-indigo-50 hover:bg-indigo-100 rounded transition-colors"
+                          title="Activity Timeline"
+                        >
+                          <MdHistory className="h-5 w-5" />
+                        </button>
                         <button 
                           onClick={() => handleEdit(lead)}
                           className="text-blue-600 hover:text-blue-900 p-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
@@ -207,6 +247,12 @@ export default function LeadsPage() {
         onClose={() => setIsModalOpen(false)} 
         onRefresh={fetchLeads} 
         existingLead={selectedLead} 
+      />
+
+      <ActivityTimelineModal
+        isOpen={isTimelineOpen}
+        onClose={() => setIsTimelineOpen(false)}
+        lead={timelineLead}
       />
     </div>
   );

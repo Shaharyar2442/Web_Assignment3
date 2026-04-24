@@ -50,6 +50,14 @@ const LeadSchema = new mongoose.Schema(
       enum: ["High", "Medium", "Low", "Unassigned"],
       default: "Unassigned",
     },
+    followUpDate: {
+      type: Date,
+      default: null,
+    },
+    lastActivityAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,

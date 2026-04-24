@@ -30,6 +30,7 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
       status: "New",
       notes: "",
       assignedTo: "",
+      followUpDate: "",
     },
   });
 
@@ -67,6 +68,7 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
         status: "New",
         notes: "",
         assignedTo: "",
+        followUpDate: "",
       });
     }
   }, [existingLead, reset, isOpen]);
@@ -77,10 +79,9 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
     // Parse budget as number
     data.budget = Number(data.budget);
     
-    // Handle empty assignedTo (convert to null or delete from payload)
-    if (data.assignedTo === "") {
-      data.assignedTo = null;
-    }
+    // Handle empty assignedTo and followUpDate
+    if (data.assignedTo === "") data.assignedTo = null;
+    if (data.followUpDate === "") data.followUpDate = null;
     
     const toastId = toast.loading(isEditing ? "Updating lead..." : "Creating lead...");
     
@@ -221,6 +222,15 @@ export default function LeadModal({ isOpen, onClose, onRefresh, existingLead = n
                     </select>
                   </div>
                 )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Follow-up Date</label>
+                  <input
+                    type="date"
+                    className="mt-1 block w-full bg-white border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    {...register("followUpDate")}
+                  />
+                </div>
               </div>
 
               <div>

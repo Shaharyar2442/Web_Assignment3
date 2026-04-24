@@ -108,6 +108,9 @@ export default function LeadsPage() {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Status & Priority
                 </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Assignment
+                </th>
                 <th scope="col" className="relative px-6 py-3">
                   <span className="sr-only">Actions</span>
                 </th>
@@ -116,7 +119,7 @@ export default function LeadsPage() {
             <tbody className="bg-white divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-10 text-center text-slate-500">
+                  <td colSpan="5" className="px-6 py-10 text-center text-slate-500">
                     <div className="flex justify-center items-center gap-2">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                       Loading leads...
@@ -125,7 +128,7 @@ export default function LeadsPage() {
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-10 text-center text-slate-500">
+                  <td colSpan="5" className="px-6 py-10 text-center text-slate-500">
                     No leads found. Click "Add New Lead" to get started.
                   </td>
                 </tr>
@@ -156,9 +159,21 @@ export default function LeadsPage() {
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(lead.status)}`}>
                           {lead.status}
                         </span>
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getScoreColor(lead.score)}`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getScoreColor(lead.score)} ${lead.score === 'High' ? 'animate-pulse ring-2 ring-red-400 ring-offset-1' : ''}`}>
                           Priority: {lead.score}
                         </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-slate-900">
+                        {lead.assignedTo ? (
+                          <div className="flex flex-col">
+                            <span className="font-medium">{lead.assignedTo.name}</span>
+                            <span className="text-xs text-slate-500">{lead.assignedTo.email}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">Unassigned</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

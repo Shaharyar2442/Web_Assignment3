@@ -34,6 +34,12 @@ export default function Navbar() {
                   <MdDashboard className="h-5 w-5" />
                   Dashboard
                 </Link>
+                <Link
+                  href="/dashboard/leads"
+                  className="text-slate-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1 transition-colors"
+                >
+                  Leads
+                </Link>
                 <div className="flex items-center gap-3 border-l pl-4 border-slate-200">
                   <div className="flex flex-col items-end">
                     <span className="text-sm font-semibold text-slate-700">

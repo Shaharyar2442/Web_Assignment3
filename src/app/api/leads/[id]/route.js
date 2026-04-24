@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Lead from "@/models/Lead";
+import User from "@/models/User";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { z } from "zod";
+import { sendLeadAssignmentEmail } from "@/lib/email";
 
 const updateLeadSchema = z.object({
   name: z.string().optional(),
@@ -111,6 +113,18 @@ export async function PUT(req, { params }) {
       performedBy: session.user.id,
       details: actionDetails.join(", "),
     });
+
+    // Phase 5: Send Email Notification for Assignment
+    if (validatedData.assignedTo !== undefined && String(validatedData.assignedTo) !== String(lead.assignedTo) && validatedData.assignedTo !== null) {
+      try {
+        const agent = await User.findById(validatedData.assignedTo);
+        if (agent && agent.email) {
+          await sendLeadAssignmentEmail(agent.email, agent.name, updatedLead);
+        }
+      } catch (e) {
+        console.error("Failed to send assignment email", e);
+      }
+    }
 
     return NextResponse.json(updatedLead, { status: 200 });
   } catch (error) {

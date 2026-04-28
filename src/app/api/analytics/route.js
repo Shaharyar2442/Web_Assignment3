@@ -19,7 +19,8 @@ export async function GET(req) {
     
     let matchStage = {};
     if (!isAdmin) {
-      matchStage.assignedTo = session.user.id;
+      const mongoose = require("mongoose");
+      matchStage.assignedTo = new mongoose.Types.ObjectId(session.user.id);
     }
 
     const totalLeads = await Lead.countDocuments(matchStage);
